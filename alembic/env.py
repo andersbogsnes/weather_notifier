@@ -5,10 +5,11 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 import weather_notifier.db
 from alembic import context
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 from weather_notifier.settings import DBAuth
-from weather_notifier.subscriptions import models
+from weather_notifier.subscriptions import models  # noqa: F401
 
 config = context.config
 
