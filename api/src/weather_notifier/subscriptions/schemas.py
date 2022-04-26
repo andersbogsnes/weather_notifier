@@ -2,7 +2,7 @@ import uuid
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr, constr, validator
+from pydantic import BaseModel, EmailStr, validator
 
 
 class ConditionEnum(str, Enum):
@@ -41,18 +41,27 @@ class ConditionOut(ConditionUpdate):
         orm_mode = True
 
 
-class SubscriptionInSchema(BaseModel):
+class SubscriptionBaseSchema(BaseModel):
     email: EmailStr
     city: str
-    country_code: constr(min_length=2, max_length=2)
+    country_code: str
+
+    @validator("country_code")
+    def valid_country_code(cls, v):
+        if len(v) != 2:
+            raise ValueError("Must be a valid 2-letter country code")
+        return v
+
+
+class SubscriptionInSchema(SubscriptionBaseSchema):
     conditions: list[Condition]
 
 
-class SubscriptionUpdateInSchema(SubscriptionInSchema):
+class SubscriptionUpdateInSchema(SubscriptionBaseSchema):
     conditions: list[ConditionUpdate]
 
 
-class SubscriptionOutSchema(SubscriptionUpdateInSchema):
+class SubscriptionOutSchema(SubscriptionBaseSchema):
     subscription_uuid: str
     conditions: list[ConditionOut]
 

@@ -3,18 +3,16 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from weather_notifier.app import create_app
-from weather_notifier.settings import Settings, DBAuth, get_settings, APIAuth
+from weather_notifier.settings import DBAuth, get_settings
 
 
 @pytest.fixture(scope="session")
-def settings() -> Settings:
-    db = DBAuth(db_url="sqlite:///")
-    api = APIAuth(api_key="mysecretkey")
-    return Settings(db=db, api=api)
+def settings() -> DBAuth:
+    return DBAuth(db_url="sqlite:///")
 
 
 @pytest.fixture(scope="session")
-def app(settings: Settings) -> FastAPI:
+def app(settings: DBAuth) -> FastAPI:
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: settings
     return app

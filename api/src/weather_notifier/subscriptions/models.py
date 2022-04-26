@@ -12,7 +12,7 @@ class Condition:
 
     id: int = sa.Column(sa.Integer, primary_key=True)
     subscription_id: int = sa.Column(sa.Integer, sa.ForeignKey("subscriptions.id"))
-    condition_uuid: str = sa.Column(sa.VARCHAR(25))
+    condition_uuid: str = sa.Column(sa.VARCHAR(36))
     condition: str = sa.Column(sa.VARCHAR(25))
     op: str = sa.Column(sa.VARCHAR(3))
     threshold: Decimal = sa.Column(sa.Numeric(19, 4))
@@ -28,4 +28,4 @@ class Subscription:
     city: str = sa.Column(sa.VARCHAR(100))
     email: str = sa.Column(sa.VARCHAR(250))
 
-    conditions = relationship("Condition", cascade="all, delete")
+    conditions: list[Condition] = relationship("Condition", cascade="all, delete")

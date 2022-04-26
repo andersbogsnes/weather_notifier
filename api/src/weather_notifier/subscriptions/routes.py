@@ -42,7 +42,6 @@ def create_new_subscription(
     """Create a new subscription"""
     return services.create_subscription(session, subscription)
 
-
 @router.put(
     "/subscription/{subscription_uuid}",
     response_model=schemas.SubscriptionOutSchema,

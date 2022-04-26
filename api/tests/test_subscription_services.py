@@ -1,39 +1,61 @@
-from typing import Callable
+import decimal
+from typing import Callable, Generator
 
 import pytest
+import sqlalchemy as sa
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from weather_notifier.db import mapper_registry
 from weather_notifier.exceptions import EntityNotFoundException
-from weather_notifier.settings import Settings
-import sqlalchemy as sa
-
+from weather_notifier.settings import DBAuth
 from weather_notifier.subscriptions import services, models, schemas
+from weather_notifier.subscriptions.models import Subscription
 
 
 @pytest.fixture(scope="session")
-def engine(settings: Settings) -> Engine:
+def engine(settings: DBAuth) -> Engine:
     return sa.create_engine(
-        settings.db.db_url.get_secret_value(),
+        settings.db_url.get_secret_value(),
         future=True,
         connect_args={"check_same_thread": False},
     )
 
 
 @pytest.fixture(scope="session")
-def create_tables(engine: Engine) -> None:
+def create_tables(engine: Engine) -> Generator[None, None, None]:
     mapper_registry.metadata.create_all(engine)
     yield
     mapper_registry.metadata.drop_all(engine)
 
 
 @pytest.fixture()
-def session(engine: Engine, create_tables) -> Session:
+def session(engine: Engine, create_tables) -> Generator[Session, None, None]:
     with Session(engine) as session:
         with session.begin():
             yield session
             session.rollback()
+
+
+@pytest.fixture()
+def subscription_data_factory(
+    email="test@testemail.com", country_code="DK", city="Copenhagen"
+) -> Callable[[], dict]:
+    def new_subscription_data() -> dict:
+        return {
+            "email": email,
+            "country_code": country_code,
+            "city": city,
+            "conditions": [
+                {
+                    "op": "lt",
+                    "threshold": decimal.Decimal(0),
+                    "condition": "temp",
+                }
+            ],
+        }
+
+    return new_subscription_data
 
 
 @pytest.fixture()
@@ -48,7 +70,7 @@ def subscription_factory() -> Callable[[], models.Subscription]:
                 models.Condition(
                     condition_uuid="03217e65-44bf-4201-a21b-77998d0fff6a",
                     op="lt",
-                    threshold=0,
+                    threshold=decimal.Decimal(0),
                     condition="temp",
                 )
             ],
@@ -138,17 +160,20 @@ def test_update_subscription_updates_data_correctly(
     result = services.update_subscription_by_uuid(
         session, subscription_db.subscription_uuid, subscription_update_schema
     )
-
+    assert result is not None
     assert result.email == "my@new-email.com"
 
     result = services.get_subscription_by_uuid(
         session, subscription_db.subscription_uuid
     )
+    assert result is not None
     assert result.email == "my@new-email.com"
 
 
 def test_update_subscription_with_incorrect_ids_raises(
-    session: Session, subscription_db: subscription_db, subscription_update_schema
+    session: Session,
+    subscription_db: Subscription,
+    subscription_update_schema: schemas.SubscriptionUpdateInSchema,
 ):
     with pytest.raises(
         EntityNotFoundException, match="Subscription: clearly-wrong-uuid not found"
@@ -156,3 +181,27 @@ def test_update_subscription_with_incorrect_ids_raises(
         services.update_subscription_by_uuid(
             session, "clearly-wrong-uuid", subscription_update_schema
         )
+
+
+def test_create_new_subscription_creates_new_subscription_correctly(
+    session: Session, subscription_data_factory: Callable[[], dict]
+):
+    subscription_data = subscription_data_factory()
+    subscription_in_data = schemas.SubscriptionInSchema.parse_obj(subscription_data)
+
+    new_sub = services.create_subscription(session, subscription_in_data)
+
+    for condition in new_sub.conditions:
+        assert condition.condition_uuid
+
+    assert new_sub
+
+    sql = sa.select(Subscription).filter_by(subscription_uuid=new_sub.subscription_uuid)
+
+    result: Subscription = session.execute(sql).scalar_one()
+
+    for condition in result.conditions:
+        assert condition.condition_uuid
+
+    assert result.email == new_sub.email
+    assert result.subscription_uuid == new_sub.subscription_uuid

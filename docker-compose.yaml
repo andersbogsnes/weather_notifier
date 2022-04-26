@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+  app:
+    image: weather_notifier_api
+    build:
+      context: ./api
+    environment:
+      - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
+    ports:
+      - "8001:8000"

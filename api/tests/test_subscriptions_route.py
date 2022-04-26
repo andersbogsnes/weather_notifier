@@ -247,13 +247,14 @@ class TestUpdateSubscription:
     @pytest.fixture(scope="class")
     def updated_subscription(self, updated_data: dict) -> models.Subscription:
         return models.Subscription(
-            **{
-                **updated_data,
-                "conditions": [
-                    models.Condition(**condition)
-                    for condition in updated_data["conditions"]
-                ],
-            }
+            subscription_uuid=updated_data["subscription_uuid"],
+            country_code=updated_data["country_code"],
+            city=updated_data["city"],
+            email=updated_data["email"],
+            conditions=[
+                models.Condition(**condition)
+                for condition in updated_data["conditions"]
+            ],
         )
 
     @pytest.fixture(scope="class")

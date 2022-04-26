@@ -1,7 +1,8 @@
 import uuid
-from typing import Optional
+from typing import Optional, cast
 
 import sqlalchemy as sa
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import Session
 
 from weather_notifier.exceptions import EntityNotFoundException
@@ -69,7 +70,10 @@ def create_subscription(
     -------
     The saved Subscription
     """
-    conditions = [Condition(**data.dict()) for data in subscription.conditions]
+    conditions = [
+        Condition(**data.dict(), condition_uuid=uuid.uuid4().hex)
+        for data in subscription.conditions
+    ]
     new_subscription = Subscription(
         **subscription.dict(exclude={"conditions"}),
         conditions=conditions,
@@ -93,15 +97,17 @@ def update_subscription_by_uuid(
     session: Session,
     subscription_uuid: str,
     subscription: schemas.SubscriptionUpdateInSchema,
-) -> Subscription:
+) -> Optional[Subscription]:
     for condition in subscription.conditions:
         sql = (
             sa.update(Condition)
             .where(Condition.condition_uuid == str(condition.condition_uuid))
             .values(**condition.dict())
         )
-        row_count = session.execute(sql).rowcount
-        if row_count == 0:
+
+        condition_result: CursorResult = cast(CursorResult, session.execute(sql))
+
+        if condition_result.rowcount == 0:
             raise EntityNotFoundException(f"Condition: {condition.condition_uuid}")
 
     sql = (
@@ -110,9 +116,9 @@ def update_subscription_by_uuid(
         .values(**subscription.dict(exclude={"conditions"}))
     )
 
-    row_count = session.execute(sql).rowcount
+    subscription_result: CursorResult = cast(CursorResult, session.execute(sql))
 
-    if row_count == 0:
+    if subscription_result.rowcount == 0:
         raise EntityNotFoundException(f"Subscription: {subscription_uuid}")
 
     return get_subscription_by_uuid(session, subscription_uuid)

@@ -1,16 +1,14 @@
-import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy.ext.asyncio import create_async_engine
-
-import weather_notifier.db
+from sqlalchemy import create_engine
+from sqlalchemy import pool
+from weather_notifier.settings import DBAuth
+from weather_notifier.db import mapper_registry
+from weather_notifier.subscriptions import models  # noqa
 from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
-from weather_notifier.settings import DBAuth
-from weather_notifier.subscriptions import models  # noqa: F401
-
 config = context.config
 
 # Interpret the config file for Python logging.
@@ -22,7 +20,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = weather_notifier.db.mapper_registry.metadata
+target_metadata = mapper_registry.metadata
 
 
 # other values from the config, defined by the needs of env.py,
@@ -55,30 +53,28 @@ def run_migrations_offline():
         context.run_migrations()
 
 
-def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
-
-    with context.begin_transaction():
-        context.run_migrations()
-
-
-async def run_migrations_online():
+def run_migrations_online():
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
 
     """
-    db_url = DBAuth().db_url.get_secret_value()
-    connectable = create_async_engine(db_url)
+    connectable = create_engine(
+        DBAuth().db_url.get_secret_value(),
+        poolclass=pool.NullPool,
+    )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
 
-    await connectable.dispose()
+        with context.begin_transaction():
+            context.run_migrations()
 
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    asyncio.run(run_migrations_online())
+    run_migrations_online()
