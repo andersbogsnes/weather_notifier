@@ -1,21 +1,8 @@
-from decimal import Decimal
+import uuid
 
-from sqlalchemy.orm import relationship
-
-from weather_notifier.db import mapper_registry
 import sqlalchemy as sa
-
-
-@mapper_registry.mapped
-class Condition:
-    __tablename__ = "conditions"
-
-    id: int = sa.Column(sa.Integer, primary_key=True)
-    subscription_id: int = sa.Column(sa.Integer, sa.ForeignKey("subscriptions.id"))
-    condition_uuid: str = sa.Column(sa.VARCHAR(36))
-    condition: str = sa.Column(sa.VARCHAR(25))
-    op: str = sa.Column(sa.VARCHAR(3))
-    threshold: Decimal = sa.Column(sa.Numeric(19, 4))
+from sqlalchemy.ext.mutable import MutableDict
+from weather_notifier.db import mapper_registry
 
 
 @mapper_registry.mapped
@@ -27,5 +14,28 @@ class Subscription:
     country_code: str = sa.Column(sa.VARCHAR(2))
     city: str = sa.Column(sa.VARCHAR(100))
     email: str = sa.Column(sa.VARCHAR(250))
+    conditions: list[dict] = sa.Column(sa.JSON())
 
-    conditions: list[Condition] = relationship("Condition", cascade="all, delete")
+    def __init__(self, country_code: str, city: str, email: str, subscription_uuid: str,
+                 conditions: list[dict]):
+        self.subscription_uuid = subscription_uuid
+        self.country_code = country_code
+        self.city = city
+        self.email = email
+        self.conditions = conditions
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Subscription":
+        return cls(
+            subscription_uuid=data.get("subscription_uuid", str(uuid.uuid4())),
+            country_code=data["country_code"],
+            city=data["city"],
+            email=data["email"],
+            conditions=data["conditions"]
+        )
+
+    def update_from_dict(self, data: dict) -> "Subscription":
+        for key, val in data.items():
+            if hasattr(self, key):
+                setattr(self, key, val)
+        return self

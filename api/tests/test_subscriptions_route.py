@@ -6,9 +6,9 @@ from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
 from requests import Response
 
-from weather_notifier.subscriptions import services
 from weather_notifier.subscriptions import models
 from weather_notifier.subscriptions import schemas
+from weather_notifier.subscriptions import services
 
 
 @pytest.fixture(scope="session")
@@ -26,30 +26,18 @@ def out_data(data: dict) -> dict:
     return {
         **data,
         "subscription_uuid": "dded2381-fb90-41dc-8f10-115cd1ee95dc",
-        "conditions": [
-            {
-                **data["conditions"][0],
-                "condition_uuid": "9dcce4f1-cfb5-431f-aadd-2fc7e9c7ed57",
-            }
-        ],
     }
 
 
 @pytest.fixture(scope="session")
 def subscription(out_data: dict) -> models.Subscription:
-    return models.Subscription(
-        subscription_uuid=out_data["subscription_uuid"],
-        email=out_data["email"],
-        city=out_data["city"],
-        country_code=out_data["country_code"],
-        conditions=[models.Condition(**c) for c in out_data["conditions"]],
-    )
+    return models.Subscription.from_dict(out_data)
 
 
 class TestCreateSubscription:
     @pytest.fixture(scope="class")
     def mock_service(
-        self, class_mocker: MockerFixture, subscription: models.Subscription
+            self, class_mocker: MockerFixture, subscription: models.Subscription
     ):
         return class_mocker.patch.object(
             services, "create_subscription", return_value=subscription
@@ -67,7 +55,7 @@ class TestCreateSubscription:
         assert response_data == out_data
 
     def test_calls_service_with_correct_data(
-        self, response: Response, mock_service: MagicMock, data: dict
+            self, response: Response, mock_service: MagicMock, data: dict
     ):
         mock_service.assert_called_once_with(ANY, schemas.SubscriptionInSchema(**data))
 
@@ -75,7 +63,7 @@ class TestCreateSubscription:
 class TestGetAllSubscription:
     @pytest.fixture(scope="class")
     def mock_service(
-        self, class_mocker: MockerFixture, subscription: models.Subscription
+            self, class_mocker: MockerFixture, subscription: models.Subscription
     ) -> MagicMock:
         return class_mocker.patch.object(
             services, "get_all_subscriptions", return_value=[subscription]
@@ -86,7 +74,7 @@ class TestGetAllSubscription:
         return client.get("/subscriptions")
 
     def test_returns_correctly_formatted_json(
-        self, response: Response, subscription: models.Subscription, out_data: dict
+            self, response: Response, subscription: models.Subscription, out_data: dict
     ):
         assert response.json() == [out_data]
 
@@ -94,7 +82,7 @@ class TestGetAllSubscription:
         assert response.status_code == status.HTTP_200_OK
 
     def test_calls_service_with_correct_data(
-        self, response: Response, mock_service: MagicMock
+            self, response: Response, mock_service: MagicMock
     ):
         mock_service.assert_called_once_with(ANY)
 
@@ -117,7 +105,7 @@ class TestGetAllSubscriptionsNoSubscriptions:
         assert response.status_code == status.HTTP_200_OK
 
     def test_calls_service_with_session(
-        self, response: Response, mock_service: MagicMock
+            self, response: Response, mock_service: MagicMock
     ):
         mock_service.assert_called_once_with(ANY)
 
@@ -125,7 +113,7 @@ class TestGetAllSubscriptionsNoSubscriptions:
 class TestGetSubscriptionByUUID:
     @pytest.fixture(scope="class")
     def mock_service(
-        self, class_mocker: MockerFixture, subscription: models.Subscription
+            self, class_mocker: MockerFixture, subscription: models.Subscription
     ) -> MagicMock:
         return class_mocker.patch.object(
             services, "get_subscription_by_uuid", return_value=subscription
@@ -133,7 +121,7 @@ class TestGetSubscriptionByUUID:
 
     @pytest.fixture(scope="class")
     def response(
-        self, client: TestClient, subscription, mock_service: MagicMock
+            self, client: TestClient, subscription, mock_service: MagicMock
     ) -> Response:
         return client.get(f"/subscription/{subscription.subscription_uuid}")
 
@@ -141,15 +129,15 @@ class TestGetSubscriptionByUUID:
         assert response.status_code == status.HTTP_200_OK
 
     def test_returns_correct_json(
-        self, response: Response, out_data: dict, subscription: models.Subscription
+            self, response: Response, out_data: dict, subscription: models.Subscription
     ):
         assert response.json() == out_data
 
     def test_service_called_with_uuid_and_session(
-        self,
-        subscription: models.Subscription,
-        mock_service: MagicMock,
-        response: Response,
+            self,
+            subscription: models.Subscription,
+            mock_service: MagicMock,
+            response: Response,
     ):
         mock_service.assert_called_once_with(ANY, subscription.subscription_uuid)
 
@@ -172,7 +160,7 @@ class TestGetSubscriptionByUUIDWhenDoesntExist:
         assert response.json() == {"detail": "Subscription Not found"}
 
     def test_service_called_with_uuid(
-        self, mock_service: MagicMock, response: Response
+            self, mock_service: MagicMock, response: Response
     ):
         mock_service.assert_called_once_with(ANY, "missing-uuid")
 
@@ -186,10 +174,10 @@ class TestDeleteSubscription:
 
     @pytest.fixture(scope="class")
     def response(
-        self,
-        client: TestClient,
-        mock_service: MagicMock,
-        subscription: models.Subscription,
+            self,
+            client: TestClient,
+            mock_service: MagicMock,
+            subscription: models.Subscription,
     ):
         return client.delete(f"/subscription/{subscription.subscription_uuid}")
 
@@ -200,10 +188,10 @@ class TestDeleteSubscription:
         assert response.text == ""
 
     def test_service_called_with_session(
-        self,
-        mock_service: MagicMock,
-        response: Response,
-        subscription: models.Subscription,
+            self,
+            mock_service: MagicMock,
+            response: Response,
+            subscription: models.Subscription,
     ):
         mock_service.assert_called_once_with(ANY, subscription.subscription_uuid)
 
@@ -217,10 +205,10 @@ class TestDeleteMissingSubscription:
 
     @pytest.fixture(scope="class")
     def response(
-        self,
-        subscription: models.Subscription,
-        mock_service: MagicMock,
-        client: TestClient,
+            self,
+            subscription: models.Subscription,
+            mock_service: MagicMock,
+            client: TestClient,
     ) -> Response:
         return client.delete(f"/subscription/{subscription.subscription_uuid}")
 
@@ -231,10 +219,10 @@ class TestDeleteMissingSubscription:
         assert response.text == ""
 
     def test_service_called_with_session_and_uuid(
-        self,
-        response: Response,
-        mock_service: MagicMock,
-        subscription: models.Subscription,
+            self,
+            response: Response,
+            mock_service: MagicMock,
+            subscription: models.Subscription,
     ):
         mock_service.assert_called_once_with(ANY, subscription.subscription_uuid)
 
@@ -242,24 +230,22 @@ class TestDeleteMissingSubscription:
 class TestUpdateSubscription:
     @pytest.fixture(scope="class")
     def updated_data(self, out_data: dict) -> dict:
-        return {**out_data, "email": "testperson2@test.com"}
+        return {**out_data, "email": "testperson2@test.com",
+                "conditions": [out_data["conditions"][0],
+                               {
+                                   "condition": "pressure",
+                                   "op": "lt",
+                                   "threshold": 0
+                               }
+                               ]}
 
     @pytest.fixture(scope="class")
     def updated_subscription(self, updated_data: dict) -> models.Subscription:
-        return models.Subscription(
-            subscription_uuid=updated_data["subscription_uuid"],
-            country_code=updated_data["country_code"],
-            city=updated_data["city"],
-            email=updated_data["email"],
-            conditions=[
-                models.Condition(**condition)
-                for condition in updated_data["conditions"]
-            ],
-        )
+        return models.Subscription.from_dict(updated_data)
 
     @pytest.fixture(scope="class")
     def mock_service(
-        self, class_mocker: MockerFixture, updated_subscription: models.Subscription
+            self, class_mocker: MockerFixture, updated_subscription: models.Subscription
     ):
         return class_mocker.patch.object(
             services, "update_subscription_by_uuid", return_value=updated_subscription
@@ -267,7 +253,7 @@ class TestUpdateSubscription:
 
     @pytest.fixture(scope="class")
     def response(
-        self, client: TestClient, updated_data: dict, mock_service: MagicMock
+            self, client: TestClient, updated_data: dict, mock_service: MagicMock
     ) -> Response:
         return client.put(
             f"/subscription/{updated_data['subscription_uuid']}",
@@ -277,15 +263,15 @@ class TestUpdateSubscription:
     def test_has_response_200_ok(self, response: Response):
         assert response.status_code == status.HTTP_200_OK
 
-    def test_has_updated_data_in_body(self, response: Response, updated_data: dict):
+    def test_has_correct_json_body(self, response: Response, updated_data: dict):
         assert response.json() == updated_data
 
     @pytest.mark.usefixtures("response")
     def test_service_is_called_with_session_uuid_and_updated_data(
-        self, mock_service: MagicMock, updated_data: dict
+            self, mock_service: MagicMock, updated_data: dict
     ):
         mock_service.assert_called_once_with(
             ANY,
             updated_data["subscription_uuid"],
-            schemas.SubscriptionUpdateInSchema.parse_obj(updated_data),
+            schemas.SubscriptionInSchema.parse_obj(updated_data),
         )

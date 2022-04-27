@@ -39,7 +39,7 @@ def session(engine: Engine, create_tables) -> Generator[Session, None, None]:
 
 @pytest.fixture()
 def subscription_data_factory(
-    email="test@testemail.com", country_code="DK", city="Copenhagen"
+        email="test@testemail.com", country_code="DK", city="Copenhagen"
 ) -> Callable[[], dict]:
     def new_subscription_data() -> dict:
         return {
@@ -66,13 +66,11 @@ def subscription_factory() -> Callable[[], models.Subscription]:
             email="test@test.email.com",
             country_code="DK",
             city="Copenhagen",
-            conditions=[
-                models.Condition(
-                    condition_uuid="03217e65-44bf-4201-a21b-77998d0fff6a",
-                    op="lt",
-                    threshold=decimal.Decimal(0),
-                    condition="temp",
-                )
+            conditions=[{
+                "op": "lt",
+                "threshold": 0,
+                "condition": "temp"}
+
             ],
         )
 
@@ -81,7 +79,7 @@ def subscription_factory() -> Callable[[], models.Subscription]:
 
 @pytest.fixture()
 def subscription_db(
-    subscription_factory: Callable[[], models.Subscription], session: Session
+        subscription_factory: Callable[[], models.Subscription], session: Session
 ) -> models.Subscription:
     sub = subscription_factory()
     session.add(sub)
@@ -90,22 +88,20 @@ def subscription_db(
 
 @pytest.fixture()
 def subscription_update_schema(
-    subscription_db: models.Subscription,
-) -> schemas.SubscriptionUpdateInSchema:
-    return schemas.SubscriptionUpdateInSchema.parse_obj(
+        subscription_db: models.Subscription,
+) -> schemas.SubscriptionInSchema:
+    return schemas.SubscriptionInSchema.parse_obj(
         {
             "email": "my@new-email.com",
             "city": subscription_db.city,
             "country_code": subscription_db.country_code,
             "conditions": [
-                schemas.ConditionUpdate.parse_obj(
-                    {
-                        "condition_uuid": obj.condition_uuid,
-                        "condition": obj.condition,
-                        "op": obj.op,
-                        "threshold": obj.threshold,
-                    }
-                )
+                {
+                    "condition": obj["condition"],
+                    "op": obj["op"],
+                    "threshold": obj["threshold"],
+                }
+
                 for obj in subscription_db.conditions
             ],
         }
@@ -117,13 +113,13 @@ def test_get_all_subscriptions_when_empty_returns_empty_list(session: Session):
 
 
 def test_get_all_subscriptions_returns_list_of_subscriptions(
-    session: Session, subscription_db: models.Subscription
+        session: Session, subscription_db: models.Subscription
 ):
     assert services.get_all_subscriptions(session) == [subscription_db]
 
 
 def test_get_a_subscription_returns_single_subscription(
-    session: Session, subscription_db: models.Subscription
+        session: Session, subscription_db: models.Subscription
 ):
     result = services.get_subscription_by_uuid(
         session, subscription_db.subscription_uuid
@@ -132,7 +128,7 @@ def test_get_a_subscription_returns_single_subscription(
 
 
 def test_delete_subscription_removes_correct_subscription(
-    session: Session, subscription_db: models.Subscription
+        session: Session, subscription_db: models.Subscription
 ):
     current = services.get_subscription_by_uuid(
         session, subscription_db.subscription_uuid
@@ -148,9 +144,9 @@ def test_delete_subscription_removes_correct_subscription(
 
 
 def test_update_subscription_updates_data_correctly(
-    session: Session,
-    subscription_db: models.Subscription,
-    subscription_update_schema: schemas.SubscriptionUpdateInSchema,
+        session: Session,
+        subscription_db: models.Subscription,
+        subscription_update_schema: schemas.SubscriptionInSchema,
 ):
     current = services.get_subscription_by_uuid(
         session, subscription_db.subscription_uuid
@@ -171,12 +167,12 @@ def test_update_subscription_updates_data_correctly(
 
 
 def test_update_subscription_with_incorrect_ids_raises(
-    session: Session,
-    subscription_db: Subscription,
-    subscription_update_schema: schemas.SubscriptionUpdateInSchema,
+        session: Session,
+        subscription_db: Subscription,
+        subscription_update_schema: schemas.SubscriptionInSchema,
 ):
     with pytest.raises(
-        EntityNotFoundException, match="Subscription: clearly-wrong-uuid not found"
+            EntityNotFoundException, match="Subscription: clearly-wrong-uuid not found"
     ):
         services.update_subscription_by_uuid(
             session, "clearly-wrong-uuid", subscription_update_schema
@@ -184,24 +180,18 @@ def test_update_subscription_with_incorrect_ids_raises(
 
 
 def test_create_new_subscription_creates_new_subscription_correctly(
-    session: Session, subscription_data_factory: Callable[[], dict]
+        session: Session, subscription_data_factory: Callable[[], dict]
 ):
     subscription_data = subscription_data_factory()
     subscription_in_data = schemas.SubscriptionInSchema.parse_obj(subscription_data)
 
     new_sub = services.create_subscription(session, subscription_in_data)
 
-    for condition in new_sub.conditions:
-        assert condition.condition_uuid
-
     assert new_sub
 
     sql = sa.select(Subscription).filter_by(subscription_uuid=new_sub.subscription_uuid)
 
     result: Subscription = session.execute(sql).scalar_one()
-
-    for condition in result.conditions:
-        assert condition.condition_uuid
 
     assert result.email == new_sub.email
     assert result.subscription_uuid == new_sub.subscription_uuid

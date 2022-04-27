@@ -12,7 +12,7 @@ click==8.1.2
     # via uvicorn
 dnspython==2.2.1
     # via email-validator
-email-validator==1.1.3
+email-validator==1.2.0
     # via pydantic
 fastapi==0.75.2
     # via weather-notifier (setup.cfg)
@@ -34,7 +34,7 @@ python-dotenv==0.20.0
     # via weather-notifier (setup.cfg)
 sniffio==1.2.0
     # via anyio
-sqlalchemy==1.4.35
+sqlalchemy==1.4.36
     # via weather-notifier (setup.cfg)
 starlette==0.17.1
     # via fastapi

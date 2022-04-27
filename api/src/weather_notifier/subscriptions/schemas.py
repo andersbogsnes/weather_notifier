@@ -19,32 +19,19 @@ class OpEnum(str, Enum):
     lte = "lte"
 
 
-class Condition(BaseModel):
+class ConditionSchema(BaseModel):
     """Base Condition schema"""
 
     condition: ConditionEnum
     op: OpEnum
-    threshold: Decimal
+    threshold: float
 
 
-class ConditionUpdate(Condition):
-    condition_uuid: str
-
-    @validator("condition_uuid")
-    def valid_uuid(cls, v):
-        uuid.UUID(v)
-        return v
-
-
-class ConditionOut(ConditionUpdate):
-    class Config:
-        orm_mode = True
-
-
-class SubscriptionBaseSchema(BaseModel):
+class SubscriptionInSchema(BaseModel):
     email: EmailStr
     city: str
     country_code: str
+    conditions: list[ConditionSchema]
 
     @validator("country_code")
     def valid_country_code(cls, v):
@@ -53,17 +40,8 @@ class SubscriptionBaseSchema(BaseModel):
         return v
 
 
-class SubscriptionInSchema(SubscriptionBaseSchema):
-    conditions: list[Condition]
-
-
-class SubscriptionUpdateInSchema(SubscriptionBaseSchema):
-    conditions: list[ConditionUpdate]
-
-
-class SubscriptionOutSchema(SubscriptionBaseSchema):
+class SubscriptionOutSchema(SubscriptionInSchema):
     subscription_uuid: str
-    conditions: list[ConditionOut]
 
     @validator("subscription_uuid")
     def valid_uuid(cls, v):
