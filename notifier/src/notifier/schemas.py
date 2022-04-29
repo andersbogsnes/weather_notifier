@@ -19,6 +19,3 @@ class WeatherConditions(BaseModel):
     pressure: float
     humidity: float
 
-
-class Weather(BaseModel):
-    main: list[WeatherConditions]

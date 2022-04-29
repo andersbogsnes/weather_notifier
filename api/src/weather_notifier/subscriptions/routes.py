@@ -8,7 +8,6 @@ from weather_notifier.subscriptions import schemas, services
 
 router = APIRouter(tags=["Subscription"])
 
-
 @router.get("/subscriptions", response_model=list[schemas.SubscriptionOutSchema])
 def get_subscriptions(session: Session = Depends(get_session)):
     """Get all subscriptions"""

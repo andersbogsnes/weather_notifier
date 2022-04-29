@@ -13,3 +13,8 @@ services:
       - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
     ports:
       - "8001:8000"
+  email:
+    image: mailhog/mailhog
+    ports:
+      - 8025:8025
+      - 1025:1025

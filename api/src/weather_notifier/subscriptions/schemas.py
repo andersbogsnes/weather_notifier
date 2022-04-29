@@ -15,8 +15,8 @@ class OpEnum(str, Enum):
     gt = "gt"
     lt = "lt"
     eq = "eq"
-    gte = "gte"
-    lte = "lte"
+    gte = "ge"
+    lte = "le"
 
 
 class ConditionSchema(BaseModel):
