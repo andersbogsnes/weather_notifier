@@ -6,10 +6,7 @@ ENV PATH=/opt/venv/bin:$PATH \
 
 FROM base as installer
 
-RUN python -m venv /opt/venv && \
-    apt-get update && \
-    apt-get install -y \
-            libpq-dev
+RUN python -m venv /opt/venv
 
 COPY requirements.txt requirements.txt
 
@@ -27,12 +24,4 @@ WORKDIR app
 
 COPY --from=installer /opt/venv /opt/venv
 
-COPY entrypoint.sh entrypoint.sh
-
-COPY alembic alembic
-COPY alembic.ini alembic.ini
-
-
-RUN chmod +x ./entrypoint.sh
-
-CMD ["./entrypoint.sh"]
+CMD ["notifier"]

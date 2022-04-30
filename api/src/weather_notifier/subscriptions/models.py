@@ -1,7 +1,7 @@
 import uuid
 
 import sqlalchemy as sa
-from sqlalchemy.ext.mutable import MutableDict
+
 from weather_notifier.db import mapper_registry
 
 
@@ -16,8 +16,14 @@ class Subscription:
     email: str = sa.Column(sa.VARCHAR(250))
     conditions: list[dict] = sa.Column(sa.JSON())
 
-    def __init__(self, country_code: str, city: str, email: str, subscription_uuid: str,
-                 conditions: list[dict]):
+    def __init__(
+        self,
+        country_code: str,
+        city: str,
+        email: str,
+        subscription_uuid: str,
+        conditions: list[dict],
+    ):
         self.subscription_uuid = subscription_uuid
         self.country_code = country_code
         self.city = city
@@ -31,7 +37,7 @@ class Subscription:
             country_code=data["country_code"],
             city=data["city"],
             email=data["email"],
-            conditions=data["conditions"]
+            conditions=data["conditions"],
         )
 
     def update_from_dict(self, data: dict) -> "Subscription":

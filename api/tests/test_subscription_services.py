@@ -39,7 +39,7 @@ def session(engine: Engine, create_tables) -> Generator[Session, None, None]:
 
 @pytest.fixture()
 def subscription_data_factory(
-        email="test@testemail.com", country_code="DK", city="Copenhagen"
+    email="test@testemail.com", country_code="DK", city="Copenhagen"
 ) -> Callable[[], dict]:
     def new_subscription_data() -> dict:
         return {
@@ -66,12 +66,7 @@ def subscription_factory() -> Callable[[], models.Subscription]:
             email="test@test.email.com",
             country_code="DK",
             city="Copenhagen",
-            conditions=[{
-                "op": "lt",
-                "threshold": 0,
-                "condition": "temp"}
-
-            ],
+            conditions=[{"op": "lt", "threshold": 0, "condition": "temp"}],
         )
 
     return new_subscription
@@ -79,7 +74,7 @@ def subscription_factory() -> Callable[[], models.Subscription]:
 
 @pytest.fixture()
 def subscription_db(
-        subscription_factory: Callable[[], models.Subscription], session: Session
+    subscription_factory: Callable[[], models.Subscription], session: Session
 ) -> models.Subscription:
     sub = subscription_factory()
     session.add(sub)
@@ -88,7 +83,7 @@ def subscription_db(
 
 @pytest.fixture()
 def subscription_update_schema(
-        subscription_db: models.Subscription,
+    subscription_db: models.Subscription,
 ) -> schemas.SubscriptionInSchema:
     return schemas.SubscriptionInSchema.parse_obj(
         {
@@ -101,7 +96,6 @@ def subscription_update_schema(
                     "op": obj["op"],
                     "threshold": obj["threshold"],
                 }
-
                 for obj in subscription_db.conditions
             ],
         }
@@ -113,13 +107,13 @@ def test_get_all_subscriptions_when_empty_returns_empty_list(session: Session):
 
 
 def test_get_all_subscriptions_returns_list_of_subscriptions(
-        session: Session, subscription_db: models.Subscription
+    session: Session, subscription_db: models.Subscription
 ):
     assert services.get_all_subscriptions(session) == [subscription_db]
 
 
 def test_get_a_subscription_returns_single_subscription(
-        session: Session, subscription_db: models.Subscription
+    session: Session, subscription_db: models.Subscription
 ):
     result = services.get_subscription_by_uuid(
         session, subscription_db.subscription_uuid
@@ -128,7 +122,7 @@ def test_get_a_subscription_returns_single_subscription(
 
 
 def test_delete_subscription_removes_correct_subscription(
-        session: Session, subscription_db: models.Subscription
+    session: Session, subscription_db: models.Subscription
 ):
     current = services.get_subscription_by_uuid(
         session, subscription_db.subscription_uuid
@@ -144,9 +138,9 @@ def test_delete_subscription_removes_correct_subscription(
 
 
 def test_update_subscription_updates_data_correctly(
-        session: Session,
-        subscription_db: models.Subscription,
-        subscription_update_schema: schemas.SubscriptionInSchema,
+    session: Session,
+    subscription_db: models.Subscription,
+    subscription_update_schema: schemas.SubscriptionInSchema,
 ):
     current = services.get_subscription_by_uuid(
         session, subscription_db.subscription_uuid
@@ -167,12 +161,12 @@ def test_update_subscription_updates_data_correctly(
 
 
 def test_update_subscription_with_incorrect_ids_raises(
-        session: Session,
-        subscription_db: Subscription,
-        subscription_update_schema: schemas.SubscriptionInSchema,
+    session: Session,
+    subscription_db: Subscription,
+    subscription_update_schema: schemas.SubscriptionInSchema,
 ):
     with pytest.raises(
-            EntityNotFoundException, match="Subscription: clearly-wrong-uuid not found"
+        EntityNotFoundException, match="Subscription: clearly-wrong-uuid not found"
     ):
         services.update_subscription_by_uuid(
             session, "clearly-wrong-uuid", subscription_update_schema
@@ -180,7 +174,7 @@ def test_update_subscription_with_incorrect_ids_raises(
 
 
 def test_create_new_subscription_creates_new_subscription_correctly(
-        session: Session, subscription_data_factory: Callable[[], dict]
+    session: Session, subscription_data_factory: Callable[[], dict]
 ):
     subscription_data = subscription_data_factory()
     subscription_in_data = schemas.SubscriptionInSchema.parse_obj(subscription_data)

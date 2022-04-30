@@ -8,6 +8,7 @@ from weather_notifier.subscriptions import schemas, services
 
 router = APIRouter(tags=["Subscription"])
 
+
 @router.get("/subscriptions", response_model=list[schemas.SubscriptionOutSchema])
 def get_subscriptions(session: Session = Depends(get_session)):
     """Get all subscriptions"""
@@ -18,11 +19,11 @@ def get_subscriptions(session: Session = Depends(get_session)):
     "/subscription/{subscription_uuid}", response_model=schemas.SubscriptionOutSchema
 )
 def get_subscription_for_id(
-        subscription_uuid: str, session: Session = Depends(get_session)
+    subscription_uuid: str, session: Session = Depends(get_session)
 ):
     """Get a given subscription"""
     if (
-            subscription := services.get_subscription_by_uuid(session, subscription_uuid)
+        subscription := services.get_subscription_by_uuid(session, subscription_uuid)
     ) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Subscription Not found"
@@ -36,7 +37,7 @@ def get_subscription_for_id(
     status_code=status.HTTP_201_CREATED,
 )
 def create_new_subscription(
-        subscription: schemas.SubscriptionInSchema, session: Session = Depends(get_session)
+    subscription: schemas.SubscriptionInSchema, session: Session = Depends(get_session)
 ):
     """Create a new subscription"""
     return services.create_subscription(session, subscription)
@@ -48,9 +49,9 @@ def create_new_subscription(
     status_code=status.HTTP_200_OK,
 )
 def update_subscription(
-        subscription_uuid: str,
-        update_data: schemas.SubscriptionInSchema,
-        session: Session = Depends(get_session),
+    subscription_uuid: str,
+    update_data: schemas.SubscriptionInSchema,
+    session: Session = Depends(get_session),
 ):
     try:
         return services.update_subscription_by_uuid(
@@ -66,7 +67,7 @@ def update_subscription(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_subscription(
-        subscription_uuid: str, session: Session = Depends(get_session)
+    subscription_uuid: str, session: Session = Depends(get_session)
 ):
     """Delete an existing subscription"""
 

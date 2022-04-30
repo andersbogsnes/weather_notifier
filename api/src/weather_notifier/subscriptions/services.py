@@ -29,7 +29,7 @@ def get_all_subscriptions(session: Session) -> list[Subscription]:
 
 
 def get_subscription_by_uuid(
-        session: Session, subscription_uuid: str
+    session: Session, subscription_uuid: str
 ) -> Optional[Subscription]:
     """
     Get a given subscription by uuid from the database. Returns None if the subscription doesn't
@@ -52,7 +52,7 @@ def get_subscription_by_uuid(
 
 
 def create_subscription(
-        session: Session, subscription: SubscriptionInSchema
+    session: Session, subscription: SubscriptionInSchema
 ) -> Subscription:
     """
     Create a new subscription
@@ -80,11 +80,13 @@ def delete_subscription_by_uuid(session: Session, subscription_uuid: str) -> Non
 
 
 def update_subscription_by_uuid(
-        session: Session,
-        subscription_uuid: str,
-        subscription: schemas.SubscriptionInSchema,
+    session: Session,
+    subscription_uuid: str,
+    subscription: schemas.SubscriptionInSchema,
 ) -> Optional[Subscription]:
-    if not (existing_subscription := get_subscription_by_uuid(session, subscription_uuid)):
+    if not (
+        existing_subscription := get_subscription_by_uuid(session, subscription_uuid)
+    ):
         raise EntityNotFoundException(f"Subscription: {subscription_uuid}")
     existing_subscription = existing_subscription.update_from_dict(subscription.dict())
     session.add(existing_subscription)

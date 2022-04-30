@@ -1,7 +1,6 @@
 import itertools
 
 import pytest
-from pydantic import BaseModel, ValidationError
 
 from weather_notifier.subscriptions import schemas
 
